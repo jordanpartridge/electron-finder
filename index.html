@@ -1,0 +1,117 @@
+ç<!DOCTYPE html>
+<html>
+<head>
+    <title>Electron Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+<div class="flex flex-col h-screen">
+    <!-- Toolbar -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+        <div class="flex items-center space-x-4">
+            <button
+                    onclick="selectDirectory()"
+                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+                Choose Directory
+            </button>
+            <div id="current-path" class="text-gray-600 dark:text-gray-300 text-sm truncate"></div>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-auto p-6">
+        <div id="file-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        </div>
+    </div>
+</div>
+
+<script>
+    const { ipcRenderer } = require('electron')
+    let currentPath = ''
+
+    async function selectDirectory() {
+        const dirPath = await ipcRenderer.invoke('select-directory')
+        if (dirPath) {
+            currentPath = dirPath
+            document.getElementById('current-path').textContent = dirPath
+            loadDirectory(dirPath)
+        }
+    }
+
+    async function loadDirectory(dirPath) {
+        const files = await ipcRenderer.invoke('read-directory', dirPath)
+        const fileList = document.getElementById('file-list')
+        fileList.innerHTML = ''
+
+        files.forEach(file => {
+            const div = document.createElement('div')
+            div.className = `
+                    group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm
+                    hover:shadow-md transition-all duration-200 cursor-pointer
+                    border border-gray-200 dark:border-gray-700
+                `
+
+            const iconColor = file.isDirectory ? 'text-blue-500' : 'text-gray-400'
+            const icon = file.isDirectory ?
+                `<svg class="w-8 h-8 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    </svg>` :
+                `<svg class="w-8 h-8 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>`
+
+            div.innerHTML = `
+                    <div class="p-4 flex flex-col space-y-2">
+                        <div class="flex items-center space-x-3">
+                            ${icon}
+                            <div class="truncate flex-1">
+                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                    ${file.name}
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                    ${file.isDirectory ? 'Folder' : formatSize(file.size)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 rounded-xl transition-opacity duration-200"></div>
+                `
+
+            div.onclick = () => {
+                if (file.isDirectory) {
+                    currentPath = file.path
+                    document.getElementById('current-path').textContent = file.path
+                    loadDirectory(file.path)
+                }
+            }
+            fileList.appendChild(div)
+        })
+    }
+
+    function formatSize(bytes) {
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+        if (bytes === 0) return '0 Bytes'
+        const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)))
+        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i]
+    }
+</script>
+</body>
+</html>

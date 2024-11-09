@@ -1,0 +1,28 @@
+{
+  "name": "electron-finder",
+  "version": "1.0.0",
+  "description": "a simple file manager",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jordanpartridge/electron-finder.git"
+  },
+  "keywords": [
+    "electron",
+    "file",
+    "file-manager"
+  ],
+  "author": "Jordan Partridge",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jordanpartridge/electron-finder/issues"
+  },
+  "homepage": "https://github.com/jordanpartridge/electron-finder#readme",
+  "devDependencies": {
+    "electron": "^33.2.0"
+  }
+}
